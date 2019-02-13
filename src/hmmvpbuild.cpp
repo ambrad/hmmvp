@@ -34,6 +34,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 #include "util/include/Mpi.hpp"
 #include "util/include/KeyValueFile.hpp"
 #include "util/include/Util.hpp"
