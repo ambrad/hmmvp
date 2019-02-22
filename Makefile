@@ -88,11 +88,15 @@ mvp:
 
 # C example.
 cmvp:
+ifneq ($(ext),mpi)
 	$(CPP) examples/cmvp_$(ext).c $(INCLUDE) $(LDFLAGS) $(LIBFLAGS) $(LIBDIRS) lib/libhmmvp_$(mode).a $(LIBS) -o examples/cmvp_$(mode)
+endif
 
 # Fortran 90 example.
 fmvp:
+ifneq ($(ext),mpi)
 	$(FORTRAN) examples/fmvp_$(ext).f90 $(INCLUDE) $(LDFLAGS) lib/libhmmvp_$(mode).a $(LIBS) -lstdc++ -o examples/fmvp_$(mode)
+endif
 
 clean:
 	rm -f src/*.o lib/*.a bin/*
