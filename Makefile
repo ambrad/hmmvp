@@ -28,7 +28,7 @@ mode = omp
 # Probably does not need to be changed:
 ifeq ($(mode),s)
 	MODE_FLAGS =
-	ext = s
+	ext = omp
 endif
 ifeq ($(mode),omp)
 	MODE_FLAGS = -fopenmp -DUTIL_OMP
@@ -88,15 +88,11 @@ mvp:
 
 # C example.
 cmvp:
-ifeq ($(ext),omp)
 	$(CPP) examples/cmvp_$(ext).c $(INCLUDE) $(LDFLAGS) $(LIBFLAGS) $(LIBDIRS) lib/libhmmvp_$(mode).a $(LIBS) -o examples/cmvp_$(mode)
-endif
 
 # Fortran 90 example.
 fmvp:
-ifeq ($(ext),omp)
 	$(FORTRAN) examples/fmvp_$(ext).f90 $(INCLUDE) $(LDFLAGS) lib/libhmmvp_$(mode).a $(LIBS) -lstdc++ -o examples/fmvp_$(mode)
-endif
 
 clean:
 	rm -f src/*.o lib/*.a bin/*
