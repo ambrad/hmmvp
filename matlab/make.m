@@ -10,10 +10,10 @@ flags = '-O -I..';
 if (use_omp) flags = [flags ' -DUTIL_OMP ']; end
 if (isunix)
   if (use_omp)
-    flags = [flags [' CXXFLAGS="\$CXXFLAGS -fopenmp" ',...
-		    'LDFLAGS="\$LDFLAGS -fopenmp"']];
+    flags = [flags [' CXXFLAGS="$CXXFLAGS -fopenmp" ',...
+		    'LDFLAGS="$LDFLAGS -fopenmp"']];
   end
-  flags = [flags ' CXXLIBS="\$CXXLIBS -Wall -lmwblas -lmwlapack"'];
+  flags = [flags ' CXXLIBS="$CXXLIBS -Wall -lmwblas -lmwlapack"'];
   mc = sprintf('mex -outdir %s -largeArrayDims %s', p, flags);
 else
   % Definitely not sure about the Windows stuff.
