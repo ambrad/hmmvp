@@ -366,7 +366,8 @@ public:
 template<typename T>
 void Aca (const MatBlock& blk, MatrixAccessor& ma, double scale,
           const bool use_rel_err, const double err,
-          Matrix<T>& U, Matrix<T>& V, AcaGfHolder* gh)
+          Matrix<T>& U, Matrix<T>& V, AcaGfHolder* gh,
+          const int n_permitted_zero_rows)
   throw (OutOfMemoryException, UserReqException)
 {
   CompressBlockInfo cbi(blk.m, blk.n, !use_rel_err, err);
@@ -389,7 +390,8 @@ void Aca (const MatBlock& blk, MatrixAccessor& ma, double scale,
 
   vector<char> unused_rows(blk.m, 1);
   vector<UInt> si(1);
-  for (int k = k1, k_max = std::min(blk.m, blk.n); k < k_max; k++) {
+  int rejected_rows = 0, zero_row_count = 0;
+  for (int k = k1, k_max = std::min(blk.m, blk.n); k < k_max; ) {
     // Get a new row of the remainder matrix R.
     bool fnd_irow = false;
     int icol;
@@ -408,8 +410,17 @@ void Aca (const MatBlock& blk, MatrixAccessor& ma, double scale,
       icol = GetMaxElement(rv, blk.n);
       unused_rows[irow] = 0;
       // Acceptable?
-      fnd_irow = fabs(rv[icol]) > scale_fac * scale;
+      fnd_irow = rv[icol] != 0 && fabs(rv[icol]) > scale_fac * scale;
       if (fnd_irow) break;
+      if (rv[icol] == 0) {
+        // We can't afford to evaluate the GF on every entry of a zero
+        // block. Give up when we hit the limit.
+        zero_row_count++;
+        if (zero_row_count > n_permitted_zero_rows) break;
+      } else {
+        // Reset the 0 count if we found a non-0 row.
+        zero_row_count = 0;
+      }
       // No, so try a new irow.
       bool fnd = false;
       for (UInt i = 0; i < blk.m; i++) {
@@ -417,12 +428,9 @@ void Aca (const MatBlock& blk, MatrixAccessor& ma, double scale,
         if (unused_rows[irow]) { fnd = true; break; }
       }
       if (!fnd) break;
-      // Increment k because we have one fewer slot in unused_rows.
-      k++;
+      rejected_rows++;
+      if (k + rejected_rows >= blk.m) break;
     }
-    // Check for exact 0.
-    if (fnd_irow) fnd_irow = rv[icol] != 0;
-    // Exactly (to measured precision) low-rank matrix.
     if (!fnd_irow) break;
     double den = rv[icol];
     for (UInt i = 0; i < blk.n; i++) rv[i] /= den;
@@ -436,16 +444,18 @@ void Aca (const MatBlock& blk, MatrixAccessor& ma, double scale,
     // u -= U*V(icol,:).'
     CalcamAb(ru, lU, lV, icol, wrk);
     ListMatPushBackVec(lU, ru, blk.m);
-    if (k >= k_max - 1) break;
+    k++;
+    if (k + rejected_rows >= blk.m) break;
     // Next irow.
     try {
       irow = MaxAvailable(ru, blk.m, unused_rows);
     } catch (const Exception& e) {
       double mu = 0;
       for (UInt i = 0; i < blk.m; i++) mu = std::max(mu, fabs(ru[i]));
-      errpr("k %d m %ld n %ld scale %e scale_fac %e irow %d icol %d "
+      errpr("k %d rej %d m %ld n %ld scale %e scale_fac %e irow %d icol %d "
             "max |ru| %e err %e\n",
-            k, blk.m, blk.n, scale, scale_fac, irow, icol, mu, err);
+            k, rejected_rows, blk.m, blk.n, scale, scale_fac, irow, icol, mu,
+            err);
       if (blk.m * blk.n <= 10000) {
         Matrix<double> G1(blk.m, blk.n);
         vector<UInt> rs(blk.m), cs(blk.n);

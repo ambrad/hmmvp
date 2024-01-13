@@ -89,6 +89,10 @@ public:
   bool IsMrem() const;
   // Set tol. Default is 1e-6.
   void SetTol(double tol) throw (Exception);
+  // Set the number of 0 rows in a block that are permitted before ACA exits. If
+  // ACA finds a non-0 row, it resets the zero-row counter. Default: 2. n <= 0
+  // means 0.
+  void SetNumberOfRejectedZeroRowsBeforeStopping(int n);
 
   // Using an old H-matrix.
 

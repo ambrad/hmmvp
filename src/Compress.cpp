@@ -323,7 +323,13 @@ int ApproxByLowRank (const LraOptions& opts, TypedLraBlock<T>& b,
       && (opts.avoid_redundant_gf_evals || max(blk.m, blk.n) <= 2 << 10);
     AcaGfHolder* gh = NULL;
     if (avoid_redundant_gf_evals) gh = new AcaGfHolder(&blk);
-    Aca(blk, *pma, scale, !opts.is_mrem, tol, b.U(), b.V(), gh);
+    try {
+      Aca(blk, *pma, scale, !opts.is_mrem, tol, b.U(), b.V(), gh,
+          opts.n_permitted_zero_rows);
+    } catch (...) {
+      if (gh) delete gh;
+      throw;
+    }
 
     if ((blk.m + blk.n) * b.NcolUV() >= blk.m*blk.n) {
       // Better just to keep the whole block.
@@ -831,9 +837,10 @@ Compressor::Compressor (const Hd* hd, GreensFn* gf)
   throw (Exception)
   : _ma(gf), _ohm(NULL), _have_old_hmat(false), _prec(2),
     _tm(Compressor::tm_mrem_abs), _Bfro(-1.0), _tol(1.0e-6),
-    _user_set_prec(false), _avoid_redundant_gf_evals(false),
-    _call_CompressQr(true), _allow_0rank(false), _output_lvl(1),
-    _omp_nthreads(1), _ablr_stats(105, 0)
+    _n_permitted_zero_rows(2), _user_set_prec(false),
+    _avoid_redundant_gf_evals(false), _call_CompressQr(true),
+    _allow_0rank(false), _output_lvl(1), _omp_nthreads(1),
+    _ablr_stats(105, 0)
 {
   if (!gf) throw Exception("gf is NULL.");
   GetHdData(hd);
@@ -869,6 +876,10 @@ bool Compressor::IsMrem () const {
 void Compressor::SetTol (double tol) throw (Exception) {
   if (tol <= 0.0) throw Exception("tol must be >= 0");
   _tol = tol;
+}
+
+void Compressor::SetNumberOfRejectedZeroRowsBeforeStopping (int n) {
+  _n_permitted_zero_rows = n < 0 ? 0 : n;
 }
 
 void Compressor::SetPrec (UInt prec_code) throw (Exception) {
@@ -1148,6 +1159,7 @@ CompressBlock (const MatBlock& b, const LraBlock* ob, int& ret) {
   if (_avoid_redundant_gf_evals) opts.min_aca_size = 2;
   opts.call_CompressQr = _call_CompressQr;
   opts.allow_0rank = _allow_0rank;
+  opts.n_permitted_zero_rows = _n_permitted_zero_rows;
   _ma.StartBlock(CompressBlockInfo(b.m, b.n, opts.is_mrem, tol));
   if (ob)
     assert((ob->IsMrem() && _tm != tm_brem_fro) ||
