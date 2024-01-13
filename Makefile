@@ -17,7 +17,7 @@ include make.inc
 # Set the optimization level. I prefer '-O3'.
 #opt = 
 #opt = -g
-opt = -O3
+opt = -g -O3
 
 # Choose serial, OpenMP-parallelized, MPI-parallized versions, or hybrid
 # MPI-OpenMP. I prefer OpenMP to MPI if I'm running on one shared-memory
@@ -80,23 +80,23 @@ libhmmvp: $(OBJECTS)
 	ar rucs lib/libhmmvp_$(mode).a $(OBJECTS)
 
 # A driver to compress an H-matrix.
-build: libhmmvp
-	$(CPP) src/hmmvpbuild.cpp $(INCLUDE) $(LDFLAGS) $(LIBFLAGS) $(LIBDIRS) lib/libhmmvp_$(mode).a $(LIBS) -o bin/hmmvpbuild_$(mode)
+build: libhmmvp src/hmmvpbuild.o
+	$(CPP) $(LDFLAGS) $(LIBFLAGS) $(LIBDIRS) src/hmmvpbuild.o lib/libhmmvp_$(mode).a $(LIBS) -o bin/hmmvpbuild_$(mode)
 
 # C++ examples.
-mvp:
-	$(CPP) examples/mvp_$(ext).cpp $(INCLUDE) $(LDFLAGS) $(LIBFLAGS) $(LIBDIRS) lib/libhmmvp_$(mode).a $(LIBS) -o examples/mvp_$(mode)
+mvp: libhmmvp examples/mvp_$(ext).o
+	$(CPP) $(LDFLAGS) $(LIBFLAGS) $(LIBDIRS) examples/mvp_$(ext).o lib/libhmmvp_$(mode).a $(LIBS) -o examples/mvp_$(mode)
 
 # C example.
-cmvp:
+cmvp: libhmmvp
 ifneq ($(ext),mpi)
-	$(CPP) examples/cmvp_$(ext).c $(INCLUDE) $(LDFLAGS) $(LIBFLAGS) $(LIBDIRS) lib/libhmmvp_$(mode).a $(LIBS) -o examples/cmvp_$(mode)
+	$(CPP) examples/cmvp_$(ext).c $(INCLUDE) $(CPPFLAGS) $(LDFLAGS) $(LIBFLAGS) $(LIBDIRS) lib/libhmmvp_$(mode).a $(LIBS) -o examples/cmvp_$(mode)
 endif
 
 # Fortran 90 example.
-fmvp:
+fmvp: libhmmvp
 ifneq ($(ext),mpi)
-	$(FORTRAN) examples/fmvp_$(ext).f90 $(INCLUDE) $(LDFLAGS) lib/libhmmvp_$(mode).a $(LIBS) -lstdc++ -o examples/fmvp_$(mode)
+	$(FORTRAN) examples/fmvp_$(ext).f90 $(INCLUDE) $(FFLAGS) $(LDFLAGS) lib/libhmmvp_$(mode).a $(LIBS) -lstdc++ -o examples/fmvp_$(mode)
 endif
 
 clean:
