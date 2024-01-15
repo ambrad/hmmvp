@@ -42,9 +42,9 @@ program main
 
   call getarg(1, filename)
   call getarg(2, arg)
-  read(arg, '(i10)'), nthreads
+  read(arg, '(i10)') nthreads
   call getarg(3, arg)
-  read(arg, '(i10)'), repeat
+  read(arg, '(i10)') repeat
 
   ! Initialize the H-matrix.
   ncol = 1

@@ -102,7 +102,8 @@ class AcaGfHolder;
 template<typename T>
 void Aca(const MatBlock& blk, MatrixAccessor& ma, double scale,
          const bool use_rel_err, const double err,
-         Matrix<T>& U, Matrix<T>& V, AcaGfHolder* gh = NULL)
+         Matrix<T>& U, Matrix<T>& V, AcaGfHolder* gh = NULL,
+         const int n_permitted_zero_rows = 2)
   throw (OutOfMemoryException, UserReqException);
 
 // Recompression using the QR factorization.
@@ -118,11 +119,13 @@ struct LraOptions {
   double aca_tol_factor;
   UInt min_aca_size;
   bool avoid_redundant_gf_evals;
+  int n_permitted_zero_rows;
   bool call_CompressQr, allow_0rank;
   static const double qr_alpha;
 
   LraOptions() : method(lra_aca), aca_tol_factor(0.1), min_aca_size(16),
-                 avoid_redundant_gf_evals(false), call_CompressQr(true) {}
+                 n_permitted_zero_rows(2), avoid_redundant_gf_evals(false),
+                 call_CompressQr(true) {}
 };
 
 template<typename T>
@@ -209,6 +212,7 @@ public:
   TolMethod GetTolMethod() const;
   bool IsMrem() const;
   void SetTol(double tol) throw (Exception);
+  void SetNumberOfRejectedZeroRowsBeforeStopping(int n);
   void SetBfroEstimate(double Bfro) throw (Exception);
   double GetBfroEstimate() const;
   // Use another H-matrix file to speed up compressing this one. Returns false
@@ -261,6 +265,7 @@ private:
   TolMethod _tm;
   double _Bfro;
   double _tol;
+  int _n_permitted_zero_rows;
   bool _user_set_prec;
   bool _avoid_redundant_gf_evals, _call_CompressQr;
   bool _allow_0rank;
