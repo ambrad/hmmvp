@@ -948,7 +948,7 @@ inline void SetThreadIndexSeps (vector<Blint>& seps, UInt nthreads, UInt n) {
   UInt nc = n / nthreads + 1;
   seps[0] = 0;
   for (UInt ti = 0; ti < nthreads - 1; ti++)
-    seps[ti+1] = (ti + 1)*nc;
+    seps[ti+1] = std::min(n, (ti + 1)*nc);
   seps[nthreads] = n;
 }
 
